@@ -1,30 +1,41 @@
 <!doctype html>
-<html lang="ja">
+<html>
   <head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# article: http://ogp.me/ns/article#">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="creator" content="mimonelu">
     <meta name="publisher" content="mimonelu">
-    <meta name="description" content="デカ文字">
+    <meta name="description" content="Render a big characters." data-i18n="content:description">
     <meta name="robots" content="all">
-    <meta property="og:title" content="デカ文字">
-    <meta property="og:type" content="デカ文字">
+    <meta property="og:title" content="Dekamoji" data-i18n="content:title">
+    <meta property="og:type" content="Dekamoji" data-i18n="content:title">
     <meta property="og:url" content="https://mimonelu.github.io/dekamoji/?t=デカ文字&b=black&f=white&w=1200&h=630&ff=serif">
     <meta property="og:image" content="https://mimonelu.github.io/dekamoji/ogp.png">
-    <meta property="og:site_name" content="デカ文字">
-    <meta property="og:description" content="デカ文字">
-    <title>デカ文字</title>
+    <meta property="og:site_name" content="Dekamoji" data-i18n="content:title">
+    <meta property="og:description" content="Render a big characters." data-i18n="content:description">
+    <title data-i18n=":title">Dekamoji</title>
     <style>
 *, * > * {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+:root {
+  font-size: calc(16px + 1vmin);
 }
 body {
   background-color: #000000;
   color: #ffffff;
+  font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+  font-feature-settings: "palt";
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
   object-fit: cover;
   overflow: hidden;
   height: 100vh;
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  user-select: none;
 }
 #canvas {
   margin: auto;
@@ -37,36 +48,205 @@ body {
   width: 100vw;
   height: 100vh;
 }
+#menu-opener {
+  background-image: url("./menu.png");
+  background-color: rgba(0, 0, 0, 0.5);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 32px;
+  border-radius: 50%;
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  width: 64px;
+  height: 64px;
+}
+#menu-opener:focus,
+#menu-opener:hover {
+  background-color: rgba(255, 0, 255, 0.5);
+  cursor: pointer;
+}
+#menu-checkbox {
+  display: none;
+}
+#menu-checkbox:checked ~ #menu-overlay {
+  display: flex;
+}
+#menu-overlay {
+  background-color: rgba(0, 0, 0, 0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 100vw;
+  height: 100vh;
+}
+#menu-content {
+  display: flex;
+  flex-direction: column;
+  grid-gap: 1rem;
+  padding: 1rem;
+  width: 100%;
+  max-width: 640px;
+}
+#menu-content form {
+  display: grid;
+  grid-gap: 1rem;
+  grid-template-columns: auto 1fr;
+}
+#menu-content label {
+  display: contents;
+}
+#menu-content label > div {
+  padding: 0.25rem 0;
+  text-align: right;
+  white-space: nowrap;
+}
+#menu-content input,
+#menu-content textarea {
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 2px solid #ffffff;
+  border-radius: 2px;
+  color: #ffffff;
+  font-size: 1rem;
+  padding: 0.25rem 0.5rem;
+  width: 100%;
+}
+#menu-content textarea {
+  resize: none;
+}
+#menu-content input:focus,
+#menu-content input:hover,
+#menu-content textarea:focus,
+#menu-content textarea:hover {
+  background-color: rgba(255, 0, 255, 0.5);
+}
+#menu-content button {
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 2px solid #ffffff;
+  border-radius: 2px;
+  color: #ffffff;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+}
+#menu-content button:focus,
+#menu-content button:hover {
+  background-color: rgba(255, 0, 255, 0.5);
+  cursor: pointer;
+}
     </style>
     <link rel="icon" href="./favicon.png">
   </head>
   <body>
-    <a id="link" href="javascript: void 0;" download="デカ文字">
-      <canvas id="canvas"></canvas>
-    </a>
+    <canvas id="canvas"></canvas>
+    <label id="menu-opener" for="menu-checkbox"></label>
+    <input id="menu-checkbox" type="checkbox">
+    <aside id="menu-overlay">
+      <div id="menu-content">
+        <form>
+          <label>
+            <div id="menu-label-text" data-i18n=":text">Text</div>
+            <textarea id="menu-value-text" onfocus="this.select()" oninput="onReupdateImage()"></textarea>
+          </label>
+          <label>
+            <div id="menu-label-bgcolor" data-i18n=":bgColor">Bg color</div>
+            <input id="menu-value-bgcolor" type="text" value="" onfocus="this.select()" oninput="onReupdateImage()">
+          </label>
+          <label>
+            <div id="menu-label-fgcolor" data-i18n=":fgColor">Fg color</div>
+            <input id="menu-value-fgcolor" type="text" value="" onfocus="this.select()" oninput="onReupdateImage()">
+          </label>
+        </form>
+        <button id="menu-download-button" onclick="onDownload()" data-i18n=":download">Download</button>
+      </div>
+    </aside>
     <script>
-const appName = 'デカ文字'
-
-const main = () => {
-  const params = new URLSearchParams(document.location.search.substring(1))
-  const text = params.get('t') || appName
-  const texts = text.split('\\n')
-  const bgColor = params.get('b') || '#000000'
-  const fgColor = params.get('f') || '#ffffff'
-  const width = Number(params.get('w') || '1200')
-  const height = Number(params.get('h') || '630')
-  const fontFamily = params.get('ff') || 'serif'
-  updateBgColor(bgColor)
-  const image = renderImage(texts, bgColor, fgColor, width, height, fontFamily)
-  updateLink(text, image)
-  updateOgp(text, image)
+const words = {
+  ja: {
+    title: 'デカ文字',
+    description: 'デカい文字を描画します。',
+    text: 'テキスト',
+    bgColor: '背景色',
+    fgColor: '前景色',
+    download: 'ダウンロード',
+  },
+}[navigator.language] || {
+  title: 'Dekamoji',
+  description: 'Render a big characters.',
+  text: 'Text',
+  bgColor: 'Bg color',
+  fgColor: 'Fg color',
+  download: 'Download',
 }
 
-const updateBgColor = (bgColor) => {
+const data = {}
+
+const defaultData = {
+  text: words.title,
+  bgColor: 'black',
+  fgColor: 'white',
+  width: 1200,
+  height: 630,
+  fontFamily: 'serif',
+}
+
+const main = () => {
+  // Get search params
+  const params = new URLSearchParams(document.location.search.substring(1))
+  data.text = params.get('t') || defaultData.text
+  data.texts = data.text.split('\n')
+  data.bgColor = params.get('b') || defaultData.bgColor
+  data.fgColor = params.get('f') || defaultData.fgColor
+  data.width = Number(params.get('w')) || defaultData.width
+  data.height = Number(params.get('h')) || defaultData.height
+  data.fontFamily = params.get('ff') || defaultData.fontFamily
+
+  setupTranslation()
+  setupForm()
+  update()
+}
+
+const setupTranslation = () => {
+  const i18nElements = document.querySelectorAll('[data-i18n]')
+  for (const i18nElement of i18nElements) {
+    const blocks = i18nElement.getAttribute('data-i18n').split(':')
+    const attribute = blocks[0]
+    const wordKey = blocks[1]
+    if (attribute) {
+      i18nElement.setAttribute(attribute, words[wordKey])
+    } else {
+      i18nElement.innerText = words[wordKey]
+    }
+  }
+}
+
+const setupForm = () => {
+  const textElement = document.querySelector('#menu-value-text')
+  textElement.placeholder = defaultData.text
+  textElement.value = data.text === defaultData.text ? '' : data.text
+  const bgcolorElement = document.querySelector('#menu-value-bgcolor')
+  bgcolorElement.placeholder = defaultData.bgColor
+  bgcolorElement.value = data.bgColor === defaultData.bgColor ? '' : data.bgColor
+  const fgcolorElement = document.querySelector('#menu-value-fgcolor')
+  fgcolorElement.placeholder = defaultData.fgColor
+  fgcolorElement.value = data.fgColor === defaultData.fgColor ? '' : data.fgColor
+}
+
+const update = () => {
+  updateBgColor(data)
+  data.image = updateImage(data)
+  updateOgp(data)
+}
+
+const updateBgColor = ({ bgColor }) => {
   document.body.style.backgroundColor = bgColor
 }
 
-const renderImage = (texts, bgColor, fgColor, width, height, fontFamily) => {
+const updateImage = ({ texts, bgColor, fgColor, width, height, fontFamily }) => {
   const canvas = document.querySelector('#canvas')
   const context = canvas.getContext('2d')
   canvas.width = width
@@ -76,9 +256,20 @@ const renderImage = (texts, bgColor, fgColor, width, height, fontFamily) => {
   context.fillStyle = bgColor
   context.fillRect(0, 0, canvas.width, canvas.height)
 
-  // Render Texts
+  // Render text
   const x = canvas.width / 2
-  const fontSize = canvas.width / (Math.max(...texts.map(text => text.length)) + 1)
+  // SEE: https://qiita.com/suin/items/3da4fb016728c024eaca
+  let fontSize = Math.min(
+    canvas.width / (Math.max(...texts.map(text => [ ...text ].length)) + 0.5),
+    canvas.height / (texts.length + (texts.length / 2 - 0.5))
+  )
+
+  // Only one character
+  const shorter = Math.min(canvas.width, canvas.height)
+  if (fontSize >= shorter) {
+    fontSize = shorter * 0.75
+  }
+
   const lineHeight = fontSize + (fontSize * 0.25)
   for (let i = 0; i < texts.length; i ++) {
     const text = texts[i]
@@ -89,28 +280,46 @@ const renderImage = (texts, bgColor, fgColor, width, height, fontFamily) => {
     context.textAlign = 'center'
     context.textBaseline = 'middle'
     context.fillStyle = fgColor
-    context.fillText(text, x, y, canvas.width)
+    context.fillText(text, x, y)
   }
 
   return canvas.toDataURL('image/png', 1.0)
 }
 
-const updateLink = (text, image) => {
-  const link = document.querySelector('#link')
-  link.setAttribute('download', text)
-  link.setAttribute('href', image)
+const updateOgp = ({ text, image }) => {
+  // URL
+  const ogUrl = document.querySelector('[property="og:url"]')
+  ogUrl.setAttribute('content', location.href)
+
+  // Image
+  const ogImage = document.querySelector('[property="og:image"]')
+  ogImage.setAttribute('content', image)
 }
 
-const updateOgp = (text, image) => {
-  if (text !== appName) {
-    document.title = `${appName} - ${text}`
-    const ogTitle = document.querySelector('[property="og:title"]')
-    ogTitle.setAttribute('content', `${appName} - ${text}`)
-    const ogUrl = document.querySelector('[property="og:url"]')
-    ogUrl.setAttribute('content', location.href)
-    const ogImage = document.querySelector('[property="og:image"]')
-    ogImage.setAttribute('content', image)
-  }
+const onReupdateImage = () => {
+  data.text = document.querySelector('#menu-value-text').value || defaultData.text
+  data.texts = data.text.split('\n')
+  data.bgColor = document.querySelector('#menu-value-bgcolor').value || defaultData.bgColor
+  data.fgColor = document.querySelector('#menu-value-fgcolor').value || defaultData.fgColor
+  update()
+
+  // Change search params
+  const url = new URL(location.href)
+  const params = url.searchParams
+  params.set('t', data.text)
+  params.set('b', data.bgColor)
+  params.set('f', data.fgColor)
+  params.set('w', data.width)
+  params.set('h', data.height)
+  params.set('ff', data.fontFamily)
+  history.replaceState({}, '', url.href)
+}
+
+const onDownload = () => {
+  const link = document.createElement('a')
+  link.setAttribute('download', data.text)
+  link.setAttribute('href', data.image)
+  link.click()
 }
 
 main()
